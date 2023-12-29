@@ -18,9 +18,8 @@ func writeOKResponse(w http.ResponseWriter, m interface{}) {
 func writeErrorResponse(w http.ResponseWriter, errorCode int, errorMsg string) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(errorCode)
-	json.
-		NewEncoder(w).
-		Encode(&JsonErrorResponse{Error: &ApiError{Status: errorCode, Title: errorMsg}})
+	json.NewEncoder(w).
+		Encode(&JsonErrorResponse{Error: &ApiError{Status: errorCode, Message: errorMsg}})
 }
 
 type JsonResponse struct {
@@ -32,6 +31,6 @@ type JsonErrorResponse struct {
 }
 
 type ApiError struct {
-	Status int    `json:"status"`
-	Title  string `json:"title"`
+	Status  int    `json:"status"`
+	Message string `json:"message"`
 }

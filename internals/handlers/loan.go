@@ -6,6 +6,7 @@ import (
 	"aspire-lite/internals/usecases"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,35 +19,42 @@ type LoanRepository interface {
 	Create(ctx context.Context, loan *models.Loan, repayments []*models.Repayment) (int64, error)
 	Approve(ctx context.Context, loanID int64, at time.Time) error
 	View(ctx context.Context, customerID int64, limit, offset int) ([]*models.Loan, error)
-	UpdateStatus(ctx context.Context, loanID int64) error
+	UpdateStatus(ctx context.Context, loanID int64, at time.Time) error
+}
+
+type TokenDecoder interface {
+	Decode(tokenString string) (int64, error)
 }
 
 type loanHandler struct {
-	loanRepo  LoanRepository
-	secretKey string
+	loanRepo     LoanRepository
+	tokenDecoder TokenDecoder
 }
 
-func NewLoan(loanRepo LoanRepository, secretKey string) *loanHandler {
+func NewLoan(loanRepo LoanRepository, tokenDecoder TokenDecoder) *loanHandler {
 	return &loanHandler{
-		loanRepo:  loanRepo,
-		secretKey: secretKey,
+		loanRepo:     loanRepo,
+		tokenDecoder: tokenDecoder,
 	}
 }
 
 func (h *loanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), constants.DefaultTimeout)
 	defer cancel()
 	var loan usecases.Loan
 	if err := json.NewDecoder(r.Body).Decode(&loan); err != nil {
 		writeErrorResponse(w, http.StatusBadRequest, "Bad request")
 		return
 	}
+	defer r.Body.Close()
+
 	inputs := mux.Vars(r)
 	customerID, err := strconv.Atoi(inputs["customer_id"])
 	if err != nil {
 		writeErrorResponse(w, http.StatusBadRequest, "Bad request")
 		return
 	}
+
 	now := time.Now().UTC()
 	date, err := parseDate(loan.Date)
 	if err != nil {
@@ -90,7 +98,7 @@ func (h *loanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *loanHandler) ApproveLoan(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), constants.DefaultTimeout)
 	defer cancel()
 	inputs := mux.Vars(r)
 	loanID, err := strconv.Atoi(inputs["loan_id"])
@@ -103,36 +111,42 @@ func (h *loanHandler) ApproveLoan(w http.ResponseWriter, r *http.Request) {
 		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
-	writeOKResponse(w, loanID)
+	writeOKResponse(w, map[string]interface{}{
+		"loan_id": loanID,
+	})
 }
 
 func (h *loanHandler) List(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), constants.DefaultTimeout)
 	defer cancel()
 
 	token := r.Header.Get("Authorization")
 	token = strings.ReplaceAll(token, "Bearer ", "")
-	signedCustomerID, err := parseToken(token, h.secretKey)
+	signedCustomerID, err := h.tokenDecoder.Decode(token)
 	if err != nil {
 		writeErrorResponse(w, http.StatusForbidden, "Forbidden")
 		return
 	}
 
 	inputs := mux.Vars(r)
-	if inputs["customer_id"] != signedCustomerID {
-		writeErrorResponse(w, http.StatusForbidden, "Forbidden")
-		return
-	}
 	customerID, err := strconv.Atoi(inputs["customer_id"])
 	if err != nil {
 		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
+	if int64(customerID) != signedCustomerID {
+		writeErrorResponse(w, http.StatusForbidden, "Forbidden")
+		return
+	}
 
-	limit, offset := getPageAndSize(r.URL.Query())
+	limit, offset := getLimitOffset(r.URL.Query())
 	loans, err := h.loanRepo.View(ctx, int64(customerID), limit, offset)
-	if err != nil {
+	if err != nil && errors.Is(err, constants.ErrorRecordNotFound) {
 		writeErrorResponse(w, http.StatusNotFound, "Not Found")
+		return
+	}
+	if err != nil {
+		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 

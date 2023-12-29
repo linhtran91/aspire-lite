@@ -11,3 +11,4 @@ db:
 
 jwt:
   secret: 432hjsa92l
+  duration: 60m

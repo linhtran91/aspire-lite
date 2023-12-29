@@ -29,13 +29,17 @@ func NewRepayment(repaymentRepo RepaymentRepository, loanRepo LoanRepository) *r
 }
 
 func (h *repayment) SubmitRepay(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), constants.DefaultTimeout)
 	defer cancel()
 	inputs := mux.Vars(r)
 	id := inputs["repayment_id"]
 	repayment, err := h.repaymentRepo.GetByID(ctx, id)
-	if errors.Is(err, errors.New("record not found")) {
+	if err != nil && errors.Is(err, constants.ErrorRecordNotFound) {
 		writeErrorResponse(w, http.StatusNotFound, "Not Found")
+		return
+	}
+	if err != nil {
+		writeErrorResponse(w, http.StatusBadRequest, "Bad request")
 		return
 	}
 
@@ -54,6 +58,7 @@ func (h *repayment) SubmitRepay(w http.ResponseWriter, r *http.Request) {
 	repayment.ActualAmount = current.Amount
 	repayment.PaidAt = now
 	repayment.Status = constants.PAID
+	repayment.UpdatedAt = now
 	if err := h.repaymentRepo.SubmitRepayment(ctx, repayment); err != nil {
 		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
@@ -72,7 +77,7 @@ func (h *repayment) SubmitRepay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.loanRepo.UpdateStatus(ctx, repayment.LoanID); err != nil {
+	if err := h.loanRepo.UpdateStatus(ctx, repayment.LoanID, now); err != nil {
 		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}

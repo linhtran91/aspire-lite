@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -28,7 +29,8 @@ type DB struct {
 }
 
 type JWT struct {
-	Secret string `json:"secret"`
+	Secret   string        `json:"secret"`
+	Duration time.Duration `json:"duration"`
 }
 
 func (cfg *Config) BuildDSN() string {

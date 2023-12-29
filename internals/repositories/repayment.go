@@ -38,6 +38,9 @@ func (r *repayment) GetByID(ctx context.Context, id string) (*models.Repayment, 
 		Where("id = ?", id).
 		First(&repayment).
 		Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, constants.ErrorRecordNotFound
+		}
 		return nil, err
 	}
 	return &repayment, nil
@@ -50,6 +53,9 @@ func (r *repayment) CountUnpaidRepayment(ctx context.Context, loanID int64) (int
 		Where("loan_id = ?", loanID).
 		Where("status != ?", constants.PAID).
 		Count(&count).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return -1, constants.ErrorRecordNotFound
+		}
 		return -1, err
 	}
 	return count, nil

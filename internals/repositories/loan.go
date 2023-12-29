@@ -59,16 +59,20 @@ func (r *loan) View(ctx context.Context, customerID int64, limit, offset int) ([
 		Order("schedule_date desc").
 		Limit(limit).Offset(offset).Error
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, constants.ErrorRecordNotFound
+		}
 		return nil, err
 	}
 	return result, nil
 }
 
-func (r *loan) UpdateStatus(ctx context.Context, loanID int64) error {
+func (r *loan) UpdateStatus(ctx context.Context, loanID int64, at time.Time) error {
 	if err := r.db.WithContext(ctx).Model(&models.Loan{}).
 		Where("id = ?", loanID).
 		Updates(map[string]interface{}{
-			"status": constants.PAID,
+			"status":     constants.PAID,
+			"updated_at": at,
 		}).Error; err != nil {
 		return err
 	}

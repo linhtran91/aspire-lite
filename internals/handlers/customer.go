@@ -1,33 +1,37 @@
 package handlers
 
 import (
+	"aspire-lite/internals/constants"
 	"aspire-lite/internals/models"
 	"aspire-lite/internals/usecases"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 )
 
 type CustomerRepository interface {
 	GetUserCredential(ctx context.Context, username string) (*models.Customer, error)
 }
 
-type authenticatorHandler struct {
-	customerRepo CustomerRepository
-	secretKey    string
+type TokenEncoder interface {
+	Encode(customerID int64) (string, error)
 }
 
-func NewAuthenticator(customerRepo CustomerRepository, secretKey string) *authenticatorHandler {
+type authenticatorHandler struct {
+	customerRepo CustomerRepository
+	tokenEncoder TokenEncoder
+}
+
+func NewAuthenticator(customerRepo CustomerRepository, tokenEncoder TokenEncoder) *authenticatorHandler {
 	return &authenticatorHandler{
 		customerRepo: customerRepo,
-		secretKey:    secretKey,
+		tokenEncoder: tokenEncoder,
 	}
 }
 
 func (h *authenticatorHandler) Login(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), constants.DefaultTimeout)
 	defer cancel()
 	var user usecases.LoginInfo
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -37,7 +41,7 @@ func (h *authenticatorHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	current, err := h.customerRepo.GetUserCredential(ctx, user.Username)
 	if err != nil {
-		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error2222")
+		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
@@ -46,10 +50,10 @@ func (h *authenticatorHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := generateToken(h.secretKey, current.ID)
+	token, err := h.tokenEncoder.Encode(current.ID)
 	if err != nil {
 		fmt.Println(err)
-		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error3333")
+		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 	writeOKResponse(w, map[string]interface{}{
