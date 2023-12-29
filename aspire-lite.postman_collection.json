@@ -1,0 +1,110 @@
+{
+	"info": {
+		"_postman_id": "a379a196-6dca-49da-876e-72f7f1c2c159",
+		"name": "aspire-lite",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "5431587"
+	},
+	"item": [
+		{
+			"name": "Create Loan",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\": 10000,\n    \"term\": 3,\n    \"date\": \"2022-02-08\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:8080/api/customers/1/loans"
+			},
+			"response": []
+		},
+		{
+			"name": "Approve Loan",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": "localhost:8080/api/loans/3/approve"
+			},
+			"response": []
+		},
+		{
+			"name": "View Loans",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXN0b21lcl9pZCI6MSwiZXhwIjoxNzAzODc4MjQwLCJuYmYiOjE3MDM4NzQ2NDAsImlhdCI6MTcwMzg3NDY0MH0.gRqNobqU85k7q5LibWICB33R6OZKmbWJok_gb7D9DDE"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api/customers/1/loans?page=1&size=10",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"customers",
+						"1",
+						"loans"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "size",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"tester01\",\n    \"password\": \"123456\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:8080/api/login"
+			},
+			"response": []
+		},
+		{
+			"name": "SubmitRepayment",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\": 3500\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:8080/api/repayments/nCDxQ2OXMMVkklNI"
+			},
+			"response": []
+		}
+	]
+}

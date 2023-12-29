@@ -4,7 +4,7 @@
 
 It has 2 ways to run the application:
 - Run via docker-compose
-- Install go and other components
+- Install Go in your local and other components
 
 ### User docker-compose
 
@@ -13,10 +13,11 @@ Run the docker-compose to run it via command
 ./start.sh
 ```
 
-### Install Go and another components
+### Install Go and other components
 
 The application is written with Go 1.21.4 and uses Postgresql as a database. Should ensure that both are installed to run the application manually. Go to this link to [download Go](https://go.dev/doc/install)
-And also go-migrate to run the data migration as below
+
+And also install go-migrate to run the data migration as below
 
 Mac installation : 
 ```sh
@@ -44,6 +45,24 @@ go run cmd/main.go
 ```
 
 ## API Interface
+
+4 APIs are built based on the requirements:
+1. Customer create a loan
+```sh
+POST /api/customers/{customer_id}/loans
+```
+2. Admin approve the loan
+```sh
+PUT /api/loans/{loan_id}/approve
+```
+3. Customer can view loan belong to him
+```sh
+GET /api/customers/{customer_id}/loans
+```
+4. Customer add a repayments
+```sh
+PUT /api/repayments/{repayment_id}
+```
 
 ### Customer create a loan
 API request
@@ -170,6 +189,7 @@ Response
 ```
 
 To check the policy of request, I decided to use the JWT token to check if the request comes from the customer or not
+
 Can use this API to create the JWT token
 
 ```sh
