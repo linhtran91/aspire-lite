@@ -3,34 +3,34 @@ package config
 import (
 	"flag"
 	"fmt"
-	"os"
+	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Server *Server `yaml:"server"`
-	DB     *DB     `yaml:"db"`
-	JWT    *JWT    `yaml:"jwt"`
+	Server *Server `yaml:"server" mapstructure:"server"`
+	DB     *DB     `yaml:"db"  mapstructure:"db"`
+	JWT    *JWT    `yaml:"jwt"  mapstructure:"jwt"`
 }
 
 type Server struct {
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
+	Host string `yaml:"host" mapstructure:"host"`
+	Port string `yaml:"port" mapstructure:"port"`
 }
 
 type DB struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	Database string `yaml:"database"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
+	Host     string `yaml:"host" mapstructure:"host"`
+	Port     string `yaml:"port" mapstructure:"port"`
+	Database string `yaml:"database" mapstructure:"database"`
+	User     string `yaml:"user" mapstructure:"user"`
+	Password string `yaml:"password" mapstructure:"password"`
 }
 
 type JWT struct {
-	Secret   string        `json:"secret"`
-	Duration time.Duration `json:"duration"`
+	Secret   string        `json:"secret" mapstructure:"secret"`
+	Duration time.Duration `json:"duration" mapstructure:"duration"`
 }
 
 func (cfg *Config) BuildDSN() string {
@@ -39,19 +39,40 @@ func (cfg *Config) BuildDSN() string {
 }
 
 func NewConfig(configPath string) (*Config, error) {
-	config := &Config{}
-	file, err := os.Open(configPath)
+	// config := &Config{}
+	// file, err := os.Open(configPath)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer file.Close()
+
+	// d := yaml.NewDecoder(file)
+	// if err := d.Decode(&config); err != nil {
+	// 	return nil, err
+	// }
+	config, err := LoadConfig(configPath)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
-	d := yaml.NewDecoder(file)
-	if err := d.Decode(&config); err != nil {
-		return nil, err
+	return &config, nil
+}
+
+func LoadConfig(path string) (config Config, err error) {
+	viper.AddConfigPath(path)
+	viper.SetConfigName("config")
+	viper.SetConfigType("yml")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(`.`, `_`))
+
+	viper.AutomaticEnv()
+
+	err = viper.ReadInConfig()
+	if err != nil {
+		return
 	}
 
-	return config, nil
+	err = viper.Unmarshal(&config)
+	return
 }
 
 func ParseFlags() (string, error) {
@@ -59,7 +80,7 @@ func ParseFlags() (string, error) {
 
 	// Set up a CLI flag called "-config" to allow users
 	// to supply the configuration file
-	flag.StringVar(&configPath, "config", "./config/config.yml", "path to config file")
+	flag.StringVar(&configPath, "config", "./config/", "path to config file")
 
 	flag.Parse()
 

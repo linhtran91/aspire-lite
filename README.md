@@ -2,8 +2,21 @@
 
 ## Install
 
-The application is written with Go 1.21.4. Go to this link to [download](https://go.dev/doc/install)
-And also go-migrate to run the migration as below
+It has 2 ways to run the application:
+- Run via docker-compose
+- Install go and other components
+
+### User docker-compose
+
+The application is using postgres as a database, can use the docker-compose to run it via command
+```sh
+./start.sh
+```
+
+### Install Go and another components
+
+The application is written with Go 1.21.4 and uses Postgresql as a database. Should ensure that both are installed to run the application manually. Go to this link to [download Go](https://go.dev/doc/install)
+And also go-migrate to run the data migration as below
 
 Mac installation : 
 ```sh
@@ -20,12 +33,7 @@ More detail in [this link](https://github.com/golang-migrate/migrate/tree/master
 migrate -path migrations -database "postgres://user:password@host:5432/database?sslmode=disable" up
 ```
 
-The application is using postgres as a database, can use the docker-compose to run it via command
-```sh
-./start.sh
-```
-
-After installed all of components, can run the application via command
+After installed all of components, update the config in the file config/config.yml and can run the application via command
 ```sh
 go run cmd/main.go
 ```

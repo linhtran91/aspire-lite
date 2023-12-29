@@ -40,6 +40,7 @@ func TestCreateLoan(t *testing.T) {
 			},
 			buildStubs: func(loanRepo *mock.MockLoanRepository, customerRepo *mock.MockCustomerRepository) {
 				loanRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(1), nil)
+				customerRepo.EXPECT().GetUserByID(gomock.Any(), gomock.Any()).Return(&models.Customer{ID: 1}, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, recorder.Code)
@@ -53,7 +54,9 @@ func TestCreateLoan(t *testing.T) {
 				Term:   3,
 				Date:   "2022-22-08",
 			},
-			buildStubs: func(loanRepo *mock.MockLoanRepository, customerRepo *mock.MockCustomerRepository) {},
+			buildStubs: func(loanRepo *mock.MockLoanRepository, customerRepo *mock.MockCustomerRepository) {
+				customerRepo.EXPECT().GetUserByID(gomock.Any(), gomock.Any()).Return(&models.Customer{ID: 1}, nil)
+			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
@@ -67,6 +70,7 @@ func TestCreateLoan(t *testing.T) {
 				Date:   "2022-02-08",
 			},
 			buildStubs: func(loanRepo *mock.MockLoanRepository, customerRepo *mock.MockCustomerRepository) {
+				customerRepo.EXPECT().GetUserByID(gomock.Any(), gomock.Any()).Return(&models.Customer{ID: 1}, nil)
 				loanRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(-1), errors.New("internal error"))
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
