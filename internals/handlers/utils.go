@@ -26,6 +26,9 @@ func getLimitOffset(values url.Values) (int, int) {
 	if size >= constants.MaximumSize {
 		size = constants.DefaultSize
 	}
+	if page == 1 {
+		return size, 0
+	}
 
 	return size, (page-1)*size + 1
 }

@@ -6,7 +6,6 @@ import (
 	"aspire-lite/internals/usecases"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -52,7 +51,6 @@ func (h *authenticatorHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.tokenEncoder.Encode(current.ID)
 	if err != nil {
-		fmt.Println(err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}

@@ -24,10 +24,19 @@ func TestGetLimitOffset(t *testing.T) {
 			wantOffset: 11,
 		},
 		{
+			name: "success from start",
+			input: url.Values{
+				"page": []string{"1"},
+				"size": []string{"10"},
+			},
+			wantLimit:  10,
+			wantOffset: 0,
+		},
+		{
 			name:       "empty",
 			input:      url.Values{},
 			wantLimit:  10,
-			wantOffset: 1,
+			wantOffset: 0,
 		},
 		{
 			name: "high offset",
@@ -36,7 +45,7 @@ func TestGetLimitOffset(t *testing.T) {
 				"size": []string{"10000000"},
 			},
 			wantLimit:  10,
-			wantOffset: 1,
+			wantOffset: 0,
 		},
 	}
 	for _, tc := range cases {
