@@ -8,7 +8,7 @@ It has 2 ways to run the application:
 
 ### User docker-compose
 
-The application is using postgres as a database, can use the docker-compose to run it via command
+Run the docker-compose to run it via command
 ```sh
 ./start.sh
 ```
@@ -33,7 +33,12 @@ More detail in [this link](https://github.com/golang-migrate/migrate/tree/master
 migrate -path migrations -database "postgres://user:password@host:5432/database?sslmode=disable" up
 ```
 
-After installed all of components, update the config in the file config/config.yml and can run the application via command
+After installed all of components, pull the dependencies via command
+```sh
+make update
+```
+
+Then update the config in the file config/config.yml and can run the application via command
 ```sh
 go run cmd/main.go
 ```
