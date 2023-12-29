@@ -33,14 +33,17 @@ func main() {
 	}
 	repaymentRepository := repositories.NewRepayment(db)
 	loanRepository := repositories.NewLoan(db)
+	customerRepository := repositories.NewCustomer(db)
 
 	repaymentHandler := handlers.NewRepayment(repaymentRepository, loanRepository)
-	loanHandler := handlers.NewLoan(loanRepository)
+	loanHandler := handlers.NewLoan(loanRepository, cfg.JWT.Secret)
+	authenHandler := handlers.NewAuthenticator(customerRepository, cfg.JWT.Secret)
 	router := mux.NewRouter()
 	router.HandleFunc("/api/customers/{customer_id}/loans", loanHandler.CreateLoan).Methods("POST")
 	router.HandleFunc("/api/customers/{customer_id}/loans", loanHandler.List).Methods("GET")
 	router.HandleFunc("/api/loans/{loan_id}/approve", loanHandler.ApproveLoan).Methods("PUT")
 	router.HandleFunc("/api/repayments/{repayment_id}", repaymentHandler.SubmitRepay).Methods("PUT")
+	router.HandleFunc("/api/login", authenHandler.Login).Methods("POST")
 
 	run(cfg, router)
 }

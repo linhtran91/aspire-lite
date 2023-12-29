@@ -8,3 +8,6 @@ db:
   database: aspire-lite
   user: tester
   password: 246357
+
+jwt:
+  secret: 432hjsa92l

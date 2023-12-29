@@ -40,10 +40,11 @@ func (r *loan) Create(ctx context.Context, loan *models.Loan, repayments []*mode
 func (r *loan) Approve(ctx context.Context, loanID int64, at time.Time) error {
 	if err := r.db.WithContext(ctx).
 		Model(&models.Loan{}).
+		Where("id = ?", loanID).
 		Updates(map[string]interface{}{
 			"status":     constants.APPROVED,
 			"updated_at": at,
-		}).Where("id = ?", loanID).Error; err != nil {
+		}).Error; err != nil {
 		return err
 	}
 	return nil
@@ -64,9 +65,11 @@ func (r *loan) View(ctx context.Context, customerID int64, limit, offset int) ([
 }
 
 func (r *loan) UpdateStatus(ctx context.Context, loanID int64) error {
-	if err := r.db.WithContext(ctx).Model(&models.Loan{}).Updates(map[string]interface{}{
-		"status": constants.PAID,
-	}).Where("id = ?", loanID).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&models.Loan{}).
+		Where("id = ?", loanID).
+		Updates(map[string]interface{}{
+			"status": constants.PAID,
+		}).Error; err != nil {
 		return err
 	}
 	return nil

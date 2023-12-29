@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Server *Server `yaml:"server"`
 	DB     *DB     `yaml:"db"`
+	JWT    *JWT    `yaml:"jwt"`
 }
 
 type Server struct {
@@ -24,6 +25,10 @@ type DB struct {
 	Database string `yaml:"database"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
+}
+
+type JWT struct {
+	Secret string `json:"secret"`
 }
 
 func (cfg *Config) BuildDSN() string {

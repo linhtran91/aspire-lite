@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -21,11 +22,15 @@ type LoanRepository interface {
 }
 
 type loanHandler struct {
-	loanRepo LoanRepository
+	loanRepo  LoanRepository
+	secretKey string
 }
 
-func NewLoan(loanRepo LoanRepository) *loanHandler {
-	return &loanHandler{loanRepo: loanRepo}
+func NewLoan(loanRepo LoanRepository, secretKey string) *loanHandler {
+	return &loanHandler{
+		loanRepo:  loanRepo,
+		secretKey: secretKey,
+	}
 }
 
 func (h *loanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
@@ -57,29 +62,31 @@ func (h *loanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
-	repayments := make([]*models.Repayment, len(loan.Repayments))
-	for i, repay := range loan.Repayments {
-		scheduledDate, err := parseDate(repay.Date)
-		if err != nil {
-			writeErrorResponse(w, http.StatusBadRequest, "Bad request")
-			return
-		}
+	repayments := make([]*models.Repayment, loan.Term)
+	var total float64
+	for i := 0; i < loan.Term; i++ {
+		amount := float64(int((loan.Amount/float64(loan.Term))*100)) / 100
+		total += amount
 		repayments[i] = &models.Repayment{
 			ID:              generateUUID(),
-			ScheduledAmount: repay.Amount,
+			ScheduledAmount: amount,
 			Status:          constants.PENDING,
-			ScheduledPayAt:  scheduledDate,
+			ScheduledPayAt:  date.AddDate(0, 0, (i+1)*7),
 			CreatedAt:       now,
 			UpdatedAt:       now,
 		}
 	}
+	repayments[len(repayments)-1].ScheduledAmount += loan.Amount - total
 
 	id, err := h.loanRepo.Create(ctx, newLoan, repayments)
 	if err != nil {
 		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
-	writeOKResponse(w, id)
+	writeOKResponse(w, map[string]interface{}{
+		"loan_id":    id,
+		"repayments": repayments,
+	})
 }
 
 func (h *loanHandler) ApproveLoan(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +109,20 @@ func (h *loanHandler) ApproveLoan(w http.ResponseWriter, r *http.Request) {
 func (h *loanHandler) List(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
+
+	token := r.Header.Get("Authorization")
+	token = strings.ReplaceAll(token, "Bearer ", "")
+	signedCustomerID, err := parseToken(token, h.secretKey)
+	if err != nil {
+		writeErrorResponse(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+
 	inputs := mux.Vars(r)
+	if inputs["customer_id"] != signedCustomerID {
+		writeErrorResponse(w, http.StatusForbidden, "Forbidden")
+		return
+	}
 	customerID, err := strconv.Atoi(inputs["customer_id"])
 	if err != nil {
 		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
