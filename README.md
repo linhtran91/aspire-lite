@@ -25,6 +25,11 @@ The application is using postgres as a database, can use the docker-compose to r
 ./start.sh
 ```
 
+After installed all of components, can run the application via command
+```sh
+go run cmd/main.go
+```
+
 ## API Interface
 
 ### Customer create a loan
