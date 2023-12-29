@@ -40,6 +40,21 @@ func (m *MockCustomerRepository) EXPECT() *MockCustomerRepositoryMockRecorder {
 	return m.recorder
 }
 
+// GetUserByID mocks base method.
+func (m *MockCustomerRepository) GetUserByID(ctx context.Context, id int64) (*models.Customer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByID", ctx, id)
+	ret0, _ := ret[0].(*models.Customer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByID indicates an expected call of GetUserByID.
+func (mr *MockCustomerRepositoryMockRecorder) GetUserByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByID", reflect.TypeOf((*MockCustomerRepository)(nil).GetUserByID), ctx, id)
+}
+
 // GetUserCredential mocks base method.
 func (m *MockCustomerRepository) GetUserCredential(ctx context.Context, username string) (*models.Customer, error) {
 	m.ctrl.T.Helper()

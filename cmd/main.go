@@ -44,7 +44,7 @@ func NewServer(cfg *config.Config) *http.Server {
 
 	repaymentHandler := handlers.NewRepayment(repaymentRepository, loanRepository)
 	tokenBuilder := token.NewJWTTokenBuilder(cfg.JWT.Secret, cfg.JWT.Duration)
-	loanHandler := handlers.NewLoan(loanRepository, tokenBuilder)
+	loanHandler := handlers.NewLoan(loanRepository, tokenBuilder, customerRepository)
 	authenHandler := handlers.NewAuthenticator(customerRepository, tokenBuilder)
 
 	router := mux.NewRouter()

@@ -29,10 +29,12 @@ type TokenDecoder interface {
 type loanHandler struct {
 	loanRepo     LoanRepository
 	tokenDecoder TokenDecoder
+	customerRepo CustomerRepository
 }
 
-func NewLoan(loanRepo LoanRepository, tokenDecoder TokenDecoder) *loanHandler {
+func NewLoan(loanRepo LoanRepository, tokenDecoder TokenDecoder, customerRepo CustomerRepository) *loanHandler {
 	return &loanHandler{
+		customerRepo: customerRepo,
 		loanRepo:     loanRepo,
 		tokenDecoder: tokenDecoder,
 	}
@@ -52,6 +54,16 @@ func (h *loanHandler) CreateLoan(w http.ResponseWriter, r *http.Request) {
 	customerID, err := strconv.Atoi(inputs["customer_id"])
 	if err != nil {
 		writeErrorResponse(w, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	_, err = h.customerRepo.GetUserByID(ctx, int64(customerID))
+	if err != nil && err == constants.ErrorRecordNotFound {
+		writeErrorResponse(w, http.StatusBadRequest, "Bad request")
+		return
+	}
+	if err != nil {
+		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 

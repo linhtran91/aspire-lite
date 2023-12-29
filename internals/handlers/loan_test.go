@@ -27,7 +27,7 @@ func TestCreateLoan(t *testing.T) {
 		name          string
 		customerID    string
 		body          usecases.Loan
-		buildStubs    func(loanRepo *mock.MockLoanRepository)
+		buildStubs    func(loanRepo *mock.MockLoanRepository, customerRepo *mock.MockCustomerRepository)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
@@ -38,7 +38,7 @@ func TestCreateLoan(t *testing.T) {
 				Term:   3,
 				Date:   "2022-02-08",
 			},
-			buildStubs: func(loanRepo *mock.MockLoanRepository) {
+			buildStubs: func(loanRepo *mock.MockLoanRepository, customerRepo *mock.MockCustomerRepository) {
 				loanRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(1), nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -53,7 +53,7 @@ func TestCreateLoan(t *testing.T) {
 				Term:   3,
 				Date:   "2022-22-08",
 			},
-			buildStubs: func(loanRepo *mock.MockLoanRepository) {},
+			buildStubs: func(loanRepo *mock.MockLoanRepository, customerRepo *mock.MockCustomerRepository) {},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
@@ -66,7 +66,7 @@ func TestCreateLoan(t *testing.T) {
 				Term:   3,
 				Date:   "2022-02-08",
 			},
-			buildStubs: func(loanRepo *mock.MockLoanRepository) {
+			buildStubs: func(loanRepo *mock.MockLoanRepository, customerRepo *mock.MockCustomerRepository) {
 				loanRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(-1), errors.New("internal error"))
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -82,9 +82,10 @@ func TestCreateLoan(t *testing.T) {
 
 			repo := mock.NewMockLoanRepository(ctrl)
 			decoder := mock.NewMockTokenDecoder(ctrl)
-			tc.buildStubs(repo)
+			customerRepo := mock.NewMockCustomerRepository(ctrl)
+			tc.buildStubs(repo, customerRepo)
 
-			handler := NewLoan(repo, decoder)
+			handler := NewLoan(repo, decoder, customerRepo)
 			recorder := httptest.NewRecorder()
 			url := fmt.Sprintf("/api/customers/%s/loans", tc.customerID)
 
@@ -136,9 +137,10 @@ func TestApproveLoan(t *testing.T) {
 
 			repo := mock.NewMockLoanRepository(ctrl)
 			decoder := mock.NewMockTokenDecoder(ctrl)
+			customerRepo := mock.NewMockCustomerRepository(ctrl)
 			tc.buildStubs(repo)
 
-			handler := NewLoan(repo, decoder)
+			handler := NewLoan(repo, decoder, customerRepo)
 			recorder := httptest.NewRecorder()
 			url := fmt.Sprintf("/api/loans/%s/approve", tc.loanID)
 
@@ -246,9 +248,10 @@ func TestListLoan(t *testing.T) {
 
 			repo := mock.NewMockLoanRepository(ctrl)
 			tokenBuilder := token.NewJWTTokenBuilder(secretKey, duration)
+			customerRepo := mock.NewMockCustomerRepository(ctrl)
 			tc.buildStubs(repo)
 
-			handler := NewLoan(repo, tokenBuilder)
+			handler := NewLoan(repo, tokenBuilder, customerRepo)
 			recorder := httptest.NewRecorder()
 			url := fmt.Sprintf("/api/customers/%d/loans", tc.customerID)
 

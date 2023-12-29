@@ -11,6 +11,7 @@ import (
 
 type CustomerRepository interface {
 	GetUserCredential(ctx context.Context, username string) (*models.Customer, error)
+	GetUserByID(ctx context.Context, id int64) (*models.Customer, error)
 }
 
 type TokenEncoder interface {

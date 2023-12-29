@@ -18,7 +18,18 @@ func NewCustomer(db *gorm.DB) *customer {
 
 func (r *customer) GetUserCredential(ctx context.Context, username string) (*models.Customer, error) {
 	var user *models.Customer
-	if err := r.db.WithContext(ctx).Model(&models.Customer{}).First(&user).Where("username = ?", username).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&models.Customer{}).Where("username = ?", username).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, constants.ErrorRecordNotFound
+		}
+		return nil, err
+	}
+	return user, nil
+}
+
+func (r *customer) GetUserByID(ctx context.Context, id int64) (*models.Customer, error) {
+	var user *models.Customer
+	if err := r.db.WithContext(ctx).Model(&models.Customer{}).Where("id = ?", id).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, constants.ErrorRecordNotFound
 		}

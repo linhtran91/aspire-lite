@@ -17,14 +17,14 @@ services:
     command: ["-path", "/migrations", "-database",  "postgres://tester:246357@postgres:5432/aspire-lite?sslmode=disable", "up", "3"]
     depends_on:
       - postgres
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - db_host=postgres
-    depends_on:
-      - postgres
-    command: [ "/app/main" ]
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - db_host=postgres
+  #   depends_on:
+  #     - postgres
+  #   command: [ "/app/main" ]

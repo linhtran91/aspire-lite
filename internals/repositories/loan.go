@@ -54,10 +54,11 @@ func (r *loan) View(ctx context.Context, customerID int64, limit, offset int) ([
 	var result []*models.Loan
 	err := r.db.WithContext(ctx).
 		Model(&models.Loan{}).
-		Find(&result).
 		Where("customer_id = ?", customerID).
-		Order("schedule_date desc").
-		Limit(limit).Offset(offset).Error
+		Order("scheduled_date desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&result).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, constants.ErrorRecordNotFound
