@@ -1,8 +1,8 @@
 package repositories
 
 import (
+	"aspire-lite/internals/constants"
 	"aspire-lite/internals/models"
-	"aspire-lite/internals/usecases"
 	"context"
 	"time"
 
@@ -41,14 +41,33 @@ func (r *loan) Approve(ctx context.Context, loanID int64, at time.Time) error {
 	if err := r.db.WithContext(ctx).
 		Model(&models.Loan{}).
 		Updates(map[string]interface{}{
-			"status":     usecases.APPROVED,
+			"status":     constants.APPROVED,
 			"updated_at": at,
-		}).Error; err != nil {
+		}).Where("id = ?", loanID).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *loan) View(ctx context.Context, customerID int64, limit, offset int) ([]*models.Loan, error) {
-	return nil, nil
+	var result []*models.Loan
+	err := r.db.WithContext(ctx).
+		Model(&models.Loan{}).
+		Find(&result).
+		Where("customer_id = ?", customerID).
+		Order("schedule_date desc").
+		Limit(limit).Offset(offset).Error
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r *loan) UpdateStatus(ctx context.Context, loanID int64) error {
+	if err := r.db.WithContext(ctx).Model(&models.Loan{}).Updates(map[string]interface{}{
+		"status": constants.PAID,
+	}).Where("id = ?", loanID).Error; err != nil {
+		return err
+	}
+	return nil
 }

@@ -34,7 +34,7 @@ func main() {
 	repaymentRepository := repositories.NewRepayment(db)
 	loanRepository := repositories.NewLoan(db)
 
-	repaymentHandler := handlers.NewRepayment(repaymentRepository)
+	repaymentHandler := handlers.NewRepayment(repaymentRepository, loanRepository)
 	loanHandler := handlers.NewLoan(loanRepository)
 	router := mux.NewRouter()
 	router.HandleFunc("/api/customers/{customer_id}/loans", loanHandler.CreateLoan).Methods("POST")

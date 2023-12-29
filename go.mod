@@ -3,8 +3,8 @@ module aspire-lite
 go 1.21.4
 
 require (
-	github.com/google/uuid v1.5.0
 	github.com/gorilla/mux v1.8.1
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5

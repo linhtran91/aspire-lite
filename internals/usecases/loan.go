@@ -12,3 +12,7 @@ type Repayment struct {
 	Amount float64 `json:"amount"`
 	Date   string  `json:"date"`
 }
+
+type SubmittedRepayment struct {
+	Amount float64 `json:"amount"`
+}

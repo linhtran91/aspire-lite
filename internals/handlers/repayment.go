@@ -1,23 +1,83 @@
 package handlers
 
 import (
+	"aspire-lite/internals/constants"
 	"aspire-lite/internals/models"
-	"fmt"
+	"aspire-lite/internals/usecases"
+	"context"
+	"encoding/json"
+	"errors"
 	"net/http"
+	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type RepaymentRepository interface {
-	PayByCustomer(repayment *models.Repayment) error
+	SubmitRepayment(ctx context.Context, repayment *models.Repayment) error
+	GetByID(ctx context.Context, id string) (*models.Repayment, error)
+	CountUnpaidRepayment(ctx context.Context, loanID int64) (int64, error)
 }
 
 type repayment struct {
 	repaymentRepo RepaymentRepository
+	loanRepo      LoanRepository
 }
 
-func NewRepayment(repaymentRepo RepaymentRepository) *repayment {
-	return &repayment{repaymentRepo: repaymentRepo}
+func NewRepayment(repaymentRepo RepaymentRepository, loanRepo LoanRepository) *repayment {
+	return &repayment{repaymentRepo: repaymentRepo, loanRepo: loanRepo}
 }
 
 func (h *repayment) SubmitRepay(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, you've requested: %s\n", r.URL.Path)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	inputs := mux.Vars(r)
+	id := inputs["repayment_id"]
+	repayment, err := h.repaymentRepo.GetByID(ctx, id)
+	if errors.Is(err, errors.New("record not found")) {
+		writeErrorResponse(w, http.StatusNotFound, "Not Found")
+		return
+	}
+
+	var current usecases.SubmittedRepayment
+	if err := json.NewDecoder(r.Body).Decode(&current); err != nil {
+		writeErrorResponse(w, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	if repayment.ScheduledAmount > current.Amount {
+		writeErrorResponse(w, http.StatusBadRequest, "Amount should be greater or equal to the scheduled repayment")
+		return
+	}
+
+	now := time.Now().UTC()
+	repayment.ActualAmount = current.Amount
+	repayment.PaidAt = now
+	repayment.Status = constants.PAID
+	if err := h.repaymentRepo.SubmitRepayment(ctx, repayment); err != nil {
+		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	count, err := h.repaymentRepo.CountUnpaidRepayment(ctx, repayment.LoanID)
+	if err != nil {
+		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	if count > 0 {
+		writeOKResponse(w, map[string]interface{}{
+			"repayment_id": id,
+		})
+		return
+	}
+
+	if err := h.loanRepo.UpdateStatus(ctx, repayment.LoanID); err != nil {
+		writeErrorResponse(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+	writeOKResponse(w, map[string]interface{}{
+		"repayment_id": id,
+		"loan_id":      repayment.LoanID,
+	})
 }

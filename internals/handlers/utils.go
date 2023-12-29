@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"aspire-lite/internals/constants"
+	"net/url"
+	"strconv"
 	"time"
 
-	"github.com/google/uuid"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 func parseDate(s string) (time.Time, error) {
@@ -11,5 +14,29 @@ func parseDate(s string) (time.Time, error) {
 }
 
 func generateUUID() string {
-	return uuid.New().String()
+	id, _ := gonanoid.New(constants.LengthOfID)
+	return id
+}
+
+func getPageAndSize(values url.Values) (int, int) {
+	page := getValueFromUrl(values, "page", constants.DefaultPage)
+	size := getValueFromUrl(values, "size", constants.DefaultSize)
+	if size >= constants.MaximumSize {
+		size = constants.DefaultSize
+	}
+
+	return size, (page - 1) * size
+}
+
+func getValueFromUrl(values url.Values, key string, defaultVal int) int {
+	val := values.Get(key)
+	if val == "" {
+		return defaultVal
+	}
+	t, err := strconv.Atoi(val)
+	if err != nil || t == 0 {
+		return constants.DefaultPage
+	}
+	return t
+
 }

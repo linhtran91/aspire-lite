@@ -1,4 +1,4 @@
-package usecases
+package constants
 
 const (
 	PENDING = iota + 1
